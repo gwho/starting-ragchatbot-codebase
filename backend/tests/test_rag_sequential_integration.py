@@ -58,7 +58,7 @@ class TestRAGSequentialIntegration:
         mock_vector_store.get_course_link.return_value = 'https://example.com/mcp'
 
         # Initialize RAG system
-        with patch('rag_system.anthropic.Anthropic') as mock_anthropic:
+        with patch('ai_generator.anthropic.Anthropic') as mock_anthropic:
             # Mock Anthropic client responses
             mock_client = Mock()
             mock_anthropic.return_value = mock_client
@@ -151,7 +151,7 @@ class TestRAGSequentialIntegration:
         )
         mock_vector_store.get_lesson_link.return_value = 'https://example.com/lesson1'
 
-        with patch('rag_system.anthropic.Anthropic') as mock_anthropic:
+        with patch('ai_generator.anthropic.Anthropic') as mock_anthropic:
             mock_client = Mock()
             mock_anthropic.return_value = mock_client
 
