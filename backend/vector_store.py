@@ -17,9 +17,9 @@ class SearchResults:
     def from_chroma(cls, chroma_results: Dict) -> 'SearchResults':
         """Create SearchResults from ChromaDB query results"""
         return cls(
-            documents=chroma_results['documents'][0] if chroma_results['documents'] else [],
-            metadata=chroma_results['metadatas'][0] if chroma_results['metadatas'] else [],
-            distances=chroma_results['distances'][0] if chroma_results['distances'] else []
+            documents=chroma_results['documents'][0] if chroma_results.get('documents') and len(chroma_results['documents']) > 0 else [],
+            metadata=chroma_results['metadatas'][0] if chroma_results.get('metadatas') and len(chroma_results['metadatas']) > 0 and chroma_results['metadatas'][0] else [],
+            distances=chroma_results['distances'][0] if chroma_results.get('distances') and len(chroma_results['distances']) > 0 else []
         )
     
     @classmethod
@@ -233,6 +233,55 @@ class VectorStore:
             print(f"Error getting courses metadata: {e}")
             return []
 
+    def get_course_outline(self, course_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Get complete outline for a single course with fuzzy name matching.
+
+        Args:
+            course_name: Course title or partial match (e.g., 'MCP', 'Introduction')
+
+        Returns:
+            Dictionary with course metadata and lessons, or None if not found
+            Structure: {
+                'title': str,
+                'instructor': str,
+                'course_link': str,
+                'lesson_count': int,
+                'lessons': List[Dict] with lesson_number, lesson_title, lesson_link
+            }
+        """
+        import json
+        try:
+            # Step 1: Use fuzzy matching to find the course
+            resolved_title = self._resolve_course_name(course_name)
+            if not resolved_title:
+                return None
+
+            # Step 2: Get full metadata for the resolved course
+            results = self.course_catalog.get(ids=[resolved_title])
+            if not results or not results['metadatas'] or not results['metadatas'][0]:
+                return None
+
+            # Step 3: Parse and return structured data
+            metadata = results['metadatas'][0]
+            course_data = {
+                'title': metadata.get('title'),
+                'instructor': metadata.get('instructor'),
+                'course_link': metadata.get('course_link'),
+                'lesson_count': metadata.get('lesson_count', 0),
+                'lessons': []
+            }
+
+            # Parse lessons JSON
+            if 'lessons_json' in metadata:
+                course_data['lessons'] = json.loads(metadata['lessons_json'])
+
+            return course_data
+
+        except Exception as e:
+            print(f"Error getting course outline: {e}")
+            return None
+
     def get_course_link(self, course_title: str) -> Optional[str]:
         """Get course link for a given course title"""
         try:
@@ -264,4 +313,5 @@ class VectorStore:
             return None
         except Exception as e:
             print(f"Error getting lesson link: {e}")
+            return None
     
