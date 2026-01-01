@@ -75,3 +75,38 @@ exclude = [
     ".venv",
     "chroma_db",
 ]
+
+[tool.pytest.ini_options]
+# Test discovery
+testpaths = ["backend/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Output and reporting
+addopts = [
+    "-v",                           # Verbose output
+    "--strict-markers",             # Strict marker validation
+    "--tb=short",                   # Short traceback format
+    "--cov=backend",                # Coverage for backend directory
+    "--cov-report=term-missing",    # Show missing lines in coverage
+    "--cov-report=html",            # Generate HTML coverage report
+    "--asyncio-mode=auto",          # Auto-detect async tests
+]
+
+# Markers for categorizing tests
+markers = [
+    "unit: Unit tests for individual components",
+    "integration: Integration tests for multiple components",
+    "api: API endpoint tests",
+    "slow: Tests that take longer to run",
+]
+
+# Asyncio configuration
+asyncio_default_fixture_loop_scope = "function"
+
+# Warnings
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]

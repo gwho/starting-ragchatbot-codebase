@@ -70,8 +70,9 @@ class TestSearchResults:
 class TestVectorStoreLinkRetrieval:
     """Test link retrieval methods for explicit return bug"""
 
-    @patch("chromadb.Client")
-    def test_get_lesson_link_exception_handling(self, mock_chroma_client):
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    @patch("chromadb.PersistentClient")
+    def test_get_lesson_link_exception_handling(self, mock_chroma_client, mock_embedding_func):
         """
         Tests Bug #2 - Missing explicit return in exception handler
 
@@ -93,8 +94,9 @@ class TestVectorStoreLinkRetrieval:
         # Currently this works but we want EXPLICIT return None in the code
         assert result is None
 
-    @patch("chromadb.Client")
-    def test_get_course_link_exception_handling(self, mock_chroma_client):
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    @patch("chromadb.PersistentClient")
+    def test_get_course_link_exception_handling(self, mock_chroma_client, mock_embedding_func):
         """
         Tests Bug #2 - Missing explicit return in get_course_link exception handler
         """
@@ -109,8 +111,9 @@ class TestVectorStoreLinkRetrieval:
 
         assert result is None
 
-    @patch("chromadb.Client")
-    def test_get_lesson_link_json_parse_error(self, mock_chroma_client):
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    @patch("chromadb.PersistentClient")
+    def test_get_lesson_link_json_parse_error(self, mock_chroma_client, mock_embedding_func):
         """Test handling of corrupted lessons_json data"""
         mock_collection = Mock()
         mock_chroma_client.return_value.get_or_create_collection.return_value = mock_collection
@@ -125,8 +128,9 @@ class TestVectorStoreLinkRetrieval:
 
         assert result is None
 
-    @patch("chromadb.Client")
-    def test_get_lesson_link_successful(self, mock_chroma_client):
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    @patch("chromadb.PersistentClient")
+    def test_get_lesson_link_successful(self, mock_chroma_client, mock_embedding_func):
         """Test successful lesson link retrieval"""
         mock_collection = Mock()
         mock_chroma_client.return_value.get_or_create_collection.return_value = mock_collection
@@ -154,8 +158,9 @@ class TestVectorStoreLinkRetrieval:
 
         assert result == "https://example.com/lesson/1"
 
-    @patch("chromadb.Client")
-    def test_get_lesson_link_not_found(self, mock_chroma_client):
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    @patch("chromadb.PersistentClient")
+    def test_get_lesson_link_not_found(self, mock_chroma_client, mock_embedding_func):
         """Test when lesson number doesn't exist"""
         mock_collection = Mock()
         mock_chroma_client.return_value.get_or_create_collection.return_value = mock_collection
@@ -183,8 +188,9 @@ class TestVectorStoreLinkRetrieval:
 class TestVectorStoreSearchEdgeCases:
     """Test search method edge cases"""
 
-    @patch("chromadb.Client")
-    def test_search_with_chroma_exception(self, mock_chroma_client):
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    @patch("chromadb.PersistentClient")
+    def test_search_with_chroma_exception(self, mock_chroma_client, mock_embedding_func):
         """Test search error handling"""
         mock_collection = Mock()
         mock_chroma_client.return_value.get_or_create_collection.return_value = mock_collection
