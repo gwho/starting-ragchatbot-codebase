@@ -75,6 +75,56 @@ Create `.env` in project root:
 ANTHROPIC_API_KEY=your_key_here
 ```
 
+### Code Quality Tools
+
+This project uses several code quality tools to maintain consistent, high-quality code:
+
+**Tools:**
+- **black**: Code formatter (line length: 100)
+- **isort**: Import sorter (compatible with black)
+- **flake8**: Linting and style checking
+- **mypy**: Static type checking
+
+**Quality Check Scripts:**
+
+```bash
+# Format code (auto-fix)
+./scripts/format.sh
+
+# Run linting and type checking
+./scripts/lint.sh
+
+# Run all checks (format check, lint, type check, tests)
+./scripts/check.sh
+```
+
+**Manual Commands:**
+
+```bash
+# Format code
+uv run black backend/ *.py
+uv run isort backend/ *.py
+
+# Check formatting without modifying
+uv run black --check backend/ *.py
+uv run isort --check-only backend/ *.py
+
+# Run linting
+uv run flake8 backend/ *.py
+
+# Run type checking
+uv run mypy backend/ *.py
+```
+
+**Configuration:**
+- Tool settings are in `pyproject.toml` ([tool.black], [tool.isort], [tool.mypy])
+- Flake8 settings are in `.flake8` (doesn't support pyproject.toml)
+- All tools configured to use 100-character line length
+- Excludes: `.venv`, `venv`, `chroma_db`
+
+**Pre-commit Checklist:**
+Before committing code, run `./scripts/check.sh` to ensure all quality checks pass.
+
 ## Architecture
 
 ### Core Components (backend/)

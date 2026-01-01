@@ -1,17 +1,19 @@
 """
 Pytest configuration and fixtures for RAG system tests
 """
-import pytest
+
 import sys
 from pathlib import Path
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
+
+import pytest
 
 # Add backend directory to path for imports
 backend_path = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_path))
 
-from vector_store import SearchResults
-from models import Course, Lesson
+from models import Course, Lesson  # noqa: E402
+from vector_store import SearchResults  # noqa: E402
 
 
 @pytest.fixture
@@ -23,7 +25,7 @@ def mock_vector_store():
     store.search.return_value = SearchResults(
         documents=["Test content from lesson 1"],
         metadata=[{"course_title": "Test Course", "lesson_number": 1, "chunk_index": 0}],
-        distances=[0.5]
+        distances=[0.5],
     )
 
     # Default link retrieval
@@ -39,8 +41,8 @@ def mock_vector_store():
         "lessons": [
             {"lesson_number": 0, "lesson_title": "Introduction"},
             {"lesson_number": 1, "lesson_title": "Getting Started"},
-            {"lesson_number": 2, "lesson_title": "Advanced Topics"}
-        ]
+            {"lesson_number": 2, "lesson_title": "Advanced Topics"},
+        ],
     }
 
     return store
@@ -51,11 +53,9 @@ def mock_tool_manager():
     """Mock ToolManager with tool execution"""
     manager = Mock()
     manager.execute_tool.return_value = "[Test Course - Lesson 1]\nTest content"
-    manager.get_last_sources.return_value = [{
-        "text": "Test Course - Lesson 1",
-        "link": "https://example.com/lesson/1",
-        "type": "lesson"
-    }]
+    manager.get_last_sources.return_value = [
+        {"text": "Test Course - Lesson 1", "link": "https://example.com/lesson/1", "type": "lesson"}
+    ]
     manager.reset_sources.return_value = None
     return manager
 
@@ -98,10 +98,16 @@ def sample_course():
         course_link="https://example.com/testing-course",
         instructor="Test Instructor",
         lessons=[
-            Lesson(lesson_number=0, title="Course Overview", lesson_link="https://example.com/lesson/0"),
-            Lesson(lesson_number=1, title="Getting Started", lesson_link="https://example.com/lesson/1"),
-            Lesson(lesson_number=2, title="Advanced Topics", lesson_link="https://example.com/lesson/2"),
-        ]
+            Lesson(
+                lesson_number=0, title="Course Overview", lesson_link="https://example.com/lesson/0"
+            ),
+            Lesson(
+                lesson_number=1, title="Getting Started", lesson_link="https://example.com/lesson/1"
+            ),
+            Lesson(
+                lesson_number=2, title="Advanced Topics", lesson_link="https://example.com/lesson/2"
+            ),
+        ],
     )
 
 

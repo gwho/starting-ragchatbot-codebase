@@ -1,9 +1,10 @@
 """
 Tests for VectorStore class - Focus on edge cases and error handling
 """
-import pytest
+
 import json
 from unittest.mock import Mock, patch
+
 from vector_store import SearchResults, VectorStore
 
 
@@ -21,9 +22,9 @@ class TestSearchResults:
         which raises IndexError.
         """
         chroma_results = {
-            'documents': [[]],  # Empty documents
-            'metadatas': [[]],  # Empty metadatas list
-            'distances': [[]]
+            "documents": [[]],  # Empty documents
+            "metadatas": [[]],  # Empty metadatas list
+            "distances": [[]],
         }
 
         # This should NOT raise IndexError
@@ -35,31 +36,27 @@ class TestSearchResults:
 
     def test_from_chroma_none_metadatas(self):
         """Test handling when metadatas is None"""
-        chroma_results = {
-            'documents': [['doc1']],
-            'metadatas': None,
-            'distances': [[0.5]]
-        }
+        chroma_results = {"documents": [["doc1"]], "metadatas": None, "distances": [[0.5]]}
 
         result = SearchResults.from_chroma(chroma_results)
 
         # Should handle None gracefully
-        assert result.documents == ['doc1']
+        assert result.documents == ["doc1"]
         assert result.metadata == []
 
     def test_from_chroma_successful(self):
         """Test normal case with valid data"""
         chroma_results = {
-            'documents': [['doc1', 'doc2']],
-            'metadatas': [[{'course_title': 'Test'}, {'course_title': 'Test2'}]],
-            'distances': [[0.5, 0.7]]
+            "documents": [["doc1", "doc2"]],
+            "metadatas": [[{"course_title": "Test"}, {"course_title": "Test2"}]],
+            "distances": [[0.5, 0.7]],
         }
 
         result = SearchResults.from_chroma(chroma_results)
 
         assert len(result.documents) == 2
         assert len(result.metadata) == 2
-        assert result.metadata[0]['course_title'] == 'Test'
+        assert result.metadata[0]["course_title"] == "Test"
 
     def test_empty_search_results(self):
         """Test creating empty search results with error message"""
@@ -73,7 +70,7 @@ class TestSearchResults:
 class TestVectorStoreLinkRetrieval:
     """Test link retrieval methods for explicit return bug"""
 
-    @patch('chromadb.Client')
+    @patch("chromadb.Client")
     def test_get_lesson_link_exception_handling(self, mock_chroma_client):
         """
         Tests Bug #2 - Missing explicit return in exception handler
@@ -96,7 +93,7 @@ class TestVectorStoreLinkRetrieval:
         # Currently this works but we want EXPLICIT return None in the code
         assert result is None
 
-    @patch('chromadb.Client')
+    @patch("chromadb.Client")
     def test_get_course_link_exception_handling(self, mock_chroma_client):
         """
         Tests Bug #2 - Missing explicit return in get_course_link exception handler
@@ -112,16 +109,14 @@ class TestVectorStoreLinkRetrieval:
 
         assert result is None
 
-    @patch('chromadb.Client')
+    @patch("chromadb.Client")
     def test_get_lesson_link_json_parse_error(self, mock_chroma_client):
         """Test handling of corrupted lessons_json data"""
         mock_collection = Mock()
         mock_chroma_client.return_value.get_or_create_collection.return_value = mock_collection
 
         # Return corrupted JSON
-        mock_collection.get.return_value = {
-            'metadatas': [{'lessons_json': 'invalid json {{{'}]
-        }
+        mock_collection.get.return_value = {"metadatas": [{"lessons_json": "invalid json {{{"}]}
 
         store = VectorStore(chroma_path="./test_db", embedding_model="test-model", max_results=5)
 
@@ -130,19 +125,27 @@ class TestVectorStoreLinkRetrieval:
 
         assert result is None
 
-    @patch('chromadb.Client')
+    @patch("chromadb.Client")
     def test_get_lesson_link_successful(self, mock_chroma_client):
         """Test successful lesson link retrieval"""
         mock_collection = Mock()
         mock_chroma_client.return_value.get_or_create_collection.return_value = mock_collection
 
         lessons_data = [
-            {"lesson_number": 1, "lesson_title": "Intro", "lesson_link": "https://example.com/lesson/1"},
-            {"lesson_number": 2, "lesson_title": "Advanced", "lesson_link": "https://example.com/lesson/2"}
+            {
+                "lesson_number": 1,
+                "lesson_title": "Intro",
+                "lesson_link": "https://example.com/lesson/1",
+            },
+            {
+                "lesson_number": 2,
+                "lesson_title": "Advanced",
+                "lesson_link": "https://example.com/lesson/2",
+            },
         ]
 
         mock_collection.get.return_value = {
-            'metadatas': [{'lessons_json': json.dumps(lessons_data)}]
+            "metadatas": [{"lessons_json": json.dumps(lessons_data)}]
         }
 
         store = VectorStore(chroma_path="./test_db", embedding_model="test-model", max_results=5)
@@ -151,18 +154,22 @@ class TestVectorStoreLinkRetrieval:
 
         assert result == "https://example.com/lesson/1"
 
-    @patch('chromadb.Client')
+    @patch("chromadb.Client")
     def test_get_lesson_link_not_found(self, mock_chroma_client):
         """Test when lesson number doesn't exist"""
         mock_collection = Mock()
         mock_chroma_client.return_value.get_or_create_collection.return_value = mock_collection
 
         lessons_data = [
-            {"lesson_number": 1, "lesson_title": "Intro", "lesson_link": "https://example.com/lesson/1"}
+            {
+                "lesson_number": 1,
+                "lesson_title": "Intro",
+                "lesson_link": "https://example.com/lesson/1",
+            }
         ]
 
         mock_collection.get.return_value = {
-            'metadatas': [{'lessons_json': json.dumps(lessons_data)}]
+            "metadatas": [{"lessons_json": json.dumps(lessons_data)}]
         }
 
         store = VectorStore(chroma_path="./test_db", embedding_model="test-model", max_results=5)
@@ -176,7 +183,7 @@ class TestVectorStoreLinkRetrieval:
 class TestVectorStoreSearchEdgeCases:
     """Test search method edge cases"""
 
-    @patch('chromadb.Client')
+    @patch("chromadb.Client")
     def test_search_with_chroma_exception(self, mock_chroma_client):
         """Test search error handling"""
         mock_collection = Mock()

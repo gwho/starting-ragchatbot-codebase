@@ -1,7 +1,9 @@
+import json
+from typing import Dict, List, Optional
+
 import anthropic
 from openai import OpenAI
-from typing import List, Optional, Dict, Any
-import json
+
 
 class AIGenerator:
     """Handles interactions with Claude API via Anthropic or OpenRouter"""
@@ -44,7 +46,14 @@ All responses must be:
 Provide only the direct answer to what was asked.
 """
 
-    def __init__(self, api_key: str, model: str, provider: str = "anthropic", base_url: Optional[str] = None, max_tool_rounds: int = 2):
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        provider: str = "anthropic",
+        base_url: Optional[str] = None,
+        max_tool_rounds: int = 2,
+    ):
         self.provider = provider.lower()
         self.model = model
         self.max_tool_rounds = max_tool_rounds
@@ -52,8 +61,7 @@ Provide only the direct answer to what was asked.
         # Initialize appropriate client based on provider
         if self.provider == "openrouter":
             self.client = OpenAI(
-                api_key=api_key,
-                base_url=base_url or "https://openrouter.ai/api/v1"
+                api_key=api_key, base_url=base_url or "https://openrouter.ai/api/v1"
             )
         else:  # anthropic (default)
             self.client = anthropic.Anthropic(api_key=api_key)
@@ -62,13 +70,16 @@ Provide only the direct answer to what was asked.
         self.base_params = {
             "model": self.model,
             "temperature": 0,
-            "max_tokens": 500  # Reduced to fit within OpenRouter credit limits
+            "max_tokens": 500,  # Reduced to fit within OpenRouter credit limits
         }
-    
-    def generate_response(self, query: str,
-                         conversation_history: Optional[str] = None,
-                         tools: Optional[List] = None,
-                         tool_manager=None) -> str:
+
+    def generate_response(
+        self,
+        query: str,
+        conversation_history: Optional[str] = None,
+        tools: Optional[List] = None,
+        tool_manager=None,
+    ) -> str:
         """
         Generate AI response with optional tool usage and conversation context.
 
@@ -86,8 +97,9 @@ Provide only the direct answer to what was asked.
         else:
             return self._generate_anthropic(query, conversation_history, tools, tool_manager)
 
-    def _generate_anthropic(self, query: str, conversation_history: Optional[str],
-                           tools: Optional[List], tool_manager) -> str:
+    def _generate_anthropic(
+        self, query: str, conversation_history: Optional[str], tools: Optional[List], tool_manager
+    ) -> str:
         """Generate response using Anthropic SDK with loop-based sequential tool calling"""
         # Build system content efficiently - avoid string ops when possible
         system_content = (
@@ -102,11 +114,7 @@ Provide only the direct answer to what was asked.
         # Sequential tool calling loop
         for iteration in range(self.max_tool_rounds):
             # Prepare API call parameters
-            api_params = {
-                **self.base_params,
-                "messages": messages,
-                "system": system_content
-            }
+            api_params = {**self.base_params, "messages": messages, "system": system_content}
 
             # Add tools if available
             if tools:
@@ -134,18 +142,19 @@ Provide only the direct answer to what was asked.
                 if content_block.type == "tool_use":
                     try:
                         tool_result = tool_manager.execute_tool(
-                            content_block.name,
-                            **content_block.input
+                            content_block.name, **content_block.input
                         )
                     except Exception as e:
                         tool_result = f"Error executing tool: {str(e)}"
                         print(f"Tool execution error: {e}")
 
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": content_block.id,
-                        "content": tool_result
-                    })
+                    tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": content_block.id,
+                            "content": tool_result,
+                        }
+                    )
 
             # Add tool results as single message
             if tool_results:
@@ -154,17 +163,14 @@ Provide only the direct answer to what was asked.
             # Continue to next iteration (or exit if max rounds reached)
 
         # Max iterations reached - make final call without tools
-        final_params = {
-            **self.base_params,
-            "messages": messages,
-            "system": system_content
-        }
+        final_params = {**self.base_params, "messages": messages, "system": system_content}
 
         final_response = self.client.messages.create(**final_params)
         return final_response.content[0].text
 
-    def _generate_openrouter(self, query: str, conversation_history: Optional[str],
-                            tools: Optional[List], tool_manager) -> str:
+    def _generate_openrouter(
+        self, query: str, conversation_history: Optional[str], tools: Optional[List], tool_manager
+    ) -> str:
         """Generate response using OpenRouter (OpenAI-compatible) with loop-based sequential tool calling"""
         # Build system content
         system_content = (
@@ -176,7 +182,7 @@ Provide only the direct answer to what was asked.
         # Initialize messages with system prompt and user query
         messages = [
             {"role": "system", "content": system_content},
-            {"role": "user", "content": query}
+            {"role": "user", "content": query},
         ]
 
         # Convert Anthropic tool format to OpenAI format if tools provided
@@ -185,10 +191,7 @@ Provide only the direct answer to what was asked.
         # Sequential tool calling loop
         for iteration in range(self.max_tool_rounds):
             # Prepare API call parameters
-            api_params = {
-                **self.base_params,
-                "messages": messages
-            }
+            api_params = {**self.base_params, "messages": messages}
 
             # Add tools if available
             if openai_tools:
@@ -224,11 +227,9 @@ Provide only the direct answer to what was asked.
                     print(f"Tool execution error: {e}")
 
                 # Add tool response
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": tool_result
-                })
+                messages.append(
+                    {"role": "tool", "tool_call_id": tool_call.id, "content": tool_result}
+                )
 
             # Continue to next iteration (or exit if max rounds reached)
 
@@ -238,10 +239,10 @@ Provide only the direct answer to what was asked.
             model=self.base_params["model"],
             messages=[
                 {"role": "system", "content": system_content},
-                *messages[1:]  # Skip original system message to avoid duplication
+                *messages[1:],  # Skip original system message to avoid duplication
             ],
             temperature=self.base_params["temperature"],
-            max_tokens=self.base_params["max_tokens"]
+            max_tokens=self.base_params["max_tokens"],
         )
 
         return final_response.choices[0].message.content
@@ -250,12 +251,14 @@ Provide only the direct answer to what was asked.
         """Convert Anthropic tool format to OpenAI function calling format"""
         openai_tools = []
         for tool in anthropic_tools:
-            openai_tools.append({
-                "type": "function",
-                "function": {
-                    "name": tool["name"],
-                    "description": tool["description"],
-                    "parameters": tool["input_schema"]
+            openai_tools.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": tool["name"],
+                        "description": tool["description"],
+                        "parameters": tool["input_schema"],
+                    },
                 }
-            })
+            )
         return openai_tools

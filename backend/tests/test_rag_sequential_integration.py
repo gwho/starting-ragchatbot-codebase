@@ -2,17 +2,18 @@
 Integration test for sequential tool calling through the RAG system
 Tests the complete flow from user query to AI response with multiple tool rounds
 """
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from rag_system import RAGSystem
+
+from unittest.mock import Mock, patch
+
 from config import Config
+from rag_system import RAGSystem
 
 
 class TestRAGSequentialIntegration:
     """Integration tests for sequential tool calling through RAG system"""
 
-    @patch('rag_system.VectorStore')
-    @patch('rag_system.DocumentProcessor')
+    @patch("rag_system.VectorStore")
+    @patch("rag_system.DocumentProcessor")
     def test_sequential_tool_calling_integration(self, mock_doc_processor, mock_vector_store_class):
         """
         E2E integration test: User query triggers sequential tool calls
@@ -35,30 +36,45 @@ class TestRAGSequentialIntegration:
 
         # Mock course outline response
         mock_vector_store.get_course_outline.return_value = {
-            'title': 'Introduction to MCP',
-            'instructor': 'Test Instructor',
-            'course_link': 'https://example.com/mcp',
-            'lesson_count': 5,
-            'lessons': [
-                {'lesson_number': 1, 'lesson_title': 'Getting Started', 'lesson_link': 'https://example.com/lesson1'},
-                {'lesson_number': 2, 'lesson_title': 'Basic Concepts', 'lesson_link': 'https://example.com/lesson2'},
-                {'lesson_number': 3, 'lesson_title': 'Building Your First Server', 'lesson_link': 'https://example.com/lesson3'},
-            ]
+            "title": "Introduction to MCP",
+            "instructor": "Test Instructor",
+            "course_link": "https://example.com/mcp",
+            "lesson_count": 5,
+            "lessons": [
+                {
+                    "lesson_number": 1,
+                    "lesson_title": "Getting Started",
+                    "lesson_link": "https://example.com/lesson1",
+                },
+                {
+                    "lesson_number": 2,
+                    "lesson_title": "Basic Concepts",
+                    "lesson_link": "https://example.com/lesson2",
+                },
+                {
+                    "lesson_number": 3,
+                    "lesson_title": "Building Your First Server",
+                    "lesson_link": "https://example.com/lesson3",
+                },
+            ],
         }
 
         # Mock search results for lesson 3
         from vector_store import SearchResults
+
         mock_search_results = SearchResults(
             documents=["Lesson 3 covers building your first MCP server with Python..."],
-            metadata=[{'course_title': 'Introduction to MCP', 'lesson_number': 3, 'chunk_index': 0}],
-            distances=[0.15]
+            metadata=[
+                {"course_title": "Introduction to MCP", "lesson_number": 3, "chunk_index": 0}
+            ],
+            distances=[0.15],
         )
         mock_vector_store.search.return_value = mock_search_results
-        mock_vector_store.get_lesson_link.return_value = 'https://example.com/lesson3'
-        mock_vector_store.get_course_link.return_value = 'https://example.com/mcp'
+        mock_vector_store.get_lesson_link.return_value = "https://example.com/lesson3"
+        mock_vector_store.get_course_link.return_value = "https://example.com/mcp"
 
         # Initialize RAG system
-        with patch('rag_system.anthropic.Anthropic') as mock_anthropic:
+        with patch("rag_system.anthropic.Anthropic") as mock_anthropic:
             # Mock Anthropic client responses
             mock_client = Mock()
             mock_anthropic.return_value = mock_client
@@ -82,7 +98,7 @@ class TestRAGSequentialIntegration:
             search_tool_use.input = {
                 "query": "Building Your First Server",
                 "course_name": "MCP",
-                "lesson_number": 3
+                "lesson_number": 3,
             }
 
             search_response = Mock()
@@ -101,8 +117,8 @@ class TestRAGSequentialIntegration:
             # Set up API call sequence
             mock_client.messages.create.side_effect = [
                 outline_response,  # Round 1: get outline
-                search_response,   # Round 2: search content
-                final_response     # Final response
+                search_response,  # Round 2: search content
+                final_response,  # Final response
             ]
 
             # Create RAG system and execute query
@@ -110,10 +126,14 @@ class TestRAGSequentialIntegration:
             response, sources = rag.query("What does lesson 3 of the MCP course cover?")
 
             # Verify sequential tool calling occurred
-            assert mock_client.messages.create.call_count == 3, "Should make 3 API calls (2 tools + final)"
+            assert (
+                mock_client.messages.create.call_count == 3
+            ), "Should make 3 API calls (2 tools + final)"
 
             # Verify tools were called in correct order
-            assert mock_vector_store.get_course_outline.call_count == 1, "Should call get_course_outline once"
+            assert (
+                mock_vector_store.get_course_outline.call_count == 1
+            ), "Should call get_course_outline once"
             assert mock_vector_store.search.call_count == 1, "Should call search once"
 
             # Verify final response is returned
@@ -122,11 +142,11 @@ class TestRAGSequentialIntegration:
 
             # Verify sources are provided
             assert len(sources) > 0, "Should have sources from the search"
-            assert sources[0]['text'] == "Introduction to MCP - Lesson 3"
-            assert sources[0]['link'] == 'https://example.com/lesson3'
+            assert sources[0]["text"] == "Introduction to MCP - Lesson 3"
+            assert sources[0]["link"] == "https://example.com/lesson3"
 
-    @patch('rag_system.VectorStore')
-    @patch('rag_system.DocumentProcessor')
+    @patch("rag_system.VectorStore")
+    @patch("rag_system.DocumentProcessor")
     def test_max_rounds_enforcement_integration(self, mock_doc_processor, mock_vector_store_class):
         """
         Integration test: Verify system stops at MAX_TOOL_ROUNDS
@@ -144,14 +164,15 @@ class TestRAGSequentialIntegration:
 
         # Mock returns for tools
         from vector_store import SearchResults
+
         mock_vector_store.search.return_value = SearchResults(
             documents=["Test content"],
-            metadata=[{'course_title': 'Test Course', 'lesson_number': 1}],
-            distances=[0.1]
+            metadata=[{"course_title": "Test Course", "lesson_number": 1}],
+            distances=[0.1],
         )
-        mock_vector_store.get_lesson_link.return_value = 'https://example.com/lesson1'
+        mock_vector_store.get_lesson_link.return_value = "https://example.com/lesson1"
 
-        with patch('rag_system.anthropic.Anthropic') as mock_anthropic:
+        with patch("rag_system.anthropic.Anthropic") as mock_anthropic:
             mock_client = Mock()
             mock_anthropic.return_value = mock_client
 
@@ -176,15 +197,17 @@ class TestRAGSequentialIntegration:
 
             # Claude tries to use tools repeatedly, but we limit to 2 rounds
             mock_client.messages.create.side_effect = [
-                tool_response,   # Round 1
-                tool_response,   # Round 2
-                final_response   # Final call (forced)
+                tool_response,  # Round 1
+                tool_response,  # Round 2
+                final_response,  # Final call (forced)
             ]
 
             rag = RAGSystem(config)
             response, sources = rag.query("Test query")
 
             # Verify max rounds enforced
-            assert mock_client.messages.create.call_count == 3, "Should stop at 2 tool rounds + 1 final call"
+            assert (
+                mock_client.messages.create.call_count == 3
+            ), "Should stop at 2 tool rounds + 1 final call"
             assert mock_vector_store.search.call_count == 2, "Should execute tools exactly twice"
             assert response == "Final answer after max rounds"

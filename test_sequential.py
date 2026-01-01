@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Test script for sequential tool calling"""
-import requests
 import json
+
+import requests
+
 
 def test_query(query):
     url = "http://localhost:8000/api/query"
@@ -17,18 +19,19 @@ def test_query(query):
         data = response.json()
         print("FULL RESPONSE DATA:")
         print(json.dumps(data, indent=2))
-        print("\n" + "="*80)
-        if 'response' in data:
+        print("\n" + "=" * 80)
+        if "response" in data:
             print("\nRESPONSE:")
-            print(data['response'])
+            print(data["response"])
             print("\nSOURCES:")
-            for source in data.get('sources', []):
+            for source in data.get("sources", []):
                 print(f"  - {source['text']}")
-                if source.get('link'):
+                if source.get("link"):
                     print(f"    Link: {source['link']}")
     else:
         print(f"Error: {response.status_code}")
         print(response.text)
+
 
 if __name__ == "__main__":
     # Test 1: Query that should trigger sequential tool calling

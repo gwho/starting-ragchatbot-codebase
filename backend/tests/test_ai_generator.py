@@ -1,8 +1,9 @@
 """
 Tests for AIGenerator - Focus on tool calling and OpenRouter system prompt bug
 """
-import pytest
-from unittest.mock import Mock, MagicMock, patch, call
+
+from unittest.mock import Mock
+
 from ai_generator import AIGenerator
 
 
@@ -15,10 +16,7 @@ class TestAnthropicToolCalling:
         generator.client = mock_anthropic_client
 
         response = generator.generate_response(
-            query="What is Python?",
-            conversation_history=None,
-            tools=None,
-            tool_manager=None
+            query="What is Python?", conversation_history=None, tools=None, tool_manager=None
         )
 
         assert response == "Test response"
@@ -56,7 +54,7 @@ class TestAnthropicToolCalling:
             query="What's in the MCP course?",
             conversation_history=None,
             tools=[{"name": "search_course_content"}],
-            tool_manager=mock_tool_manager
+            tool_manager=mock_tool_manager,
         )
 
         # Should call API twice (tool use + final response)
@@ -106,23 +104,25 @@ class TestOpenRouterToolCalling:
             api_key="test-key",
             model="anthropic/claude-3.5-sonnet",
             provider="openrouter",
-            base_url="https://openrouter.ai/api/v1"
+            base_url="https://openrouter.ai/api/v1",
         )
         generator.client = mock_client
 
-        response = generator.generate_response(
+        _response = generator.generate_response(  # noqa: F841
             query="What's in the MCP course?",
             conversation_history=None,
-            tools=[{
-                "name": "search_course_content",
-                "description": "Search course content",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {"query": {"type": "string"}},
-                    "required": ["query"]
+            tools=[
+                {
+                    "name": "search_course_content",
+                    "description": "Search course content",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {"query": {"type": "string"}},
+                        "required": ["query"],
+                    },
                 }
-            }],
-            tool_manager=mock_tool_manager
+            ],
+            tool_manager=mock_tool_manager,
         )
 
         # Verify final API call includes system prompt
@@ -132,14 +132,14 @@ class TestOpenRouterToolCalling:
         final_call_kwargs = mock_client.chat.completions.create.call_args_list[1][1]
 
         # CRITICAL CHECK: System prompt must be in messages for final call
-        messages = final_call_kwargs.get('messages', [])
+        messages = final_call_kwargs.get("messages", [])
 
         # Should have system message at the start
-        system_messages = [msg for msg in messages if msg.get('role') == 'system']
+        system_messages = [msg for msg in messages if msg.get("role") == "system"]
 
         # THIS WILL FAIL - current code doesn't include system prompt in final call
         assert len(system_messages) > 0, "System prompt missing in OpenRouter final call!"
-        assert generator.SYSTEM_PROMPT in system_messages[0]['content']
+        assert generator.SYSTEM_PROMPT in system_messages[0]["content"]
 
     def test_openrouter_basic_response(self, mock_openai_client):
         """Test basic OpenRouter response without tools"""
@@ -147,15 +147,12 @@ class TestOpenRouterToolCalling:
             api_key="test-key",
             model="anthropic/claude-3.5-sonnet",
             provider="openrouter",
-            base_url="https://openrouter.ai/api/v1"
+            base_url="https://openrouter.ai/api/v1",
         )
         generator.client = mock_openai_client
 
         response = generator.generate_response(
-            query="What is Python?",
-            conversation_history=None,
-            tools=None,
-            tool_manager=None
+            query="What is Python?", conversation_history=None, tools=None, tool_manager=None
         )
 
         assert response == "Test response"
@@ -208,7 +205,7 @@ class TestToolExecutionErrorHandling:
             query="test",
             conversation_history=None,
             tools=[{"name": "search_course_content"}],
-            tool_manager=mock_tool_manager
+            tool_manager=mock_tool_manager,
         )
 
         # Should complete despite tool error
@@ -245,7 +242,7 @@ class TestToolExecutionErrorHandling:
             api_key="test-key",
             model="anthropic/claude-3.5-sonnet",
             provider="openrouter",
-            base_url="https://openrouter.ai/api/v1"
+            base_url="https://openrouter.ai/api/v1",
         )
         generator.client = mock_client
 
@@ -253,16 +250,18 @@ class TestToolExecutionErrorHandling:
         response = generator.generate_response(
             query="test",
             conversation_history=None,
-            tools=[{
-                "name": "search_course_content",
-                "description": "Search course content",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {"query": {"type": "string"}},
-                    "required": ["query"]
+            tools=[
+                {
+                    "name": "search_course_content",
+                    "description": "Search course content",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {"query": {"type": "string"}},
+                        "required": ["query"],
+                    },
                 }
-            }],
-            tool_manager=mock_tool_manager
+            ],
+            tool_manager=mock_tool_manager,
         )
 
         assert response is not None
@@ -280,15 +279,12 @@ class TestConversationHistory:
         history = "User: What is MCP?\nAssistant: MCP is Model Context Protocol\nUser: Tell me more\nAssistant: It's a way to..."
 
         generator.generate_response(
-            query="What's the latest?",
-            conversation_history=history,
-            tools=None,
-            tool_manager=None
+            query="What's the latest?", conversation_history=history, tools=None, tool_manager=None
         )
 
         # Verify history was included in system prompt
         call_kwargs = mock_anthropic_client.messages.create.call_args.kwargs
-        system_content = call_kwargs['system']
+        system_content = call_kwargs["system"]
 
         # History should be in system prompt
         assert "What is MCP?" in system_content
@@ -322,14 +318,16 @@ class TestSequentialToolCalling:
 
         mock_client.messages.create.side_effect = [tool_use_response, final_response]
 
-        generator = AIGenerator(api_key="test-key", model="claude-sonnet-4", provider="anthropic", max_tool_rounds=2)
+        generator = AIGenerator(
+            api_key="test-key", model="claude-sonnet-4", provider="anthropic", max_tool_rounds=2
+        )
         generator.client = mock_client
 
         response = generator.generate_response(
             query="What's in the course?",
             conversation_history=None,
             tools=[{"name": "search_course_content"}],
-            tool_manager=mock_tool_manager
+            tool_manager=mock_tool_manager,
         )
 
         # Should call API twice (tool use + final)
@@ -372,14 +370,16 @@ class TestSequentialToolCalling:
 
         mock_client.messages.create.side_effect = [tool_use_1, tool_use_2, final_response]
 
-        generator = AIGenerator(api_key="test-key", model="claude-sonnet-4", provider="anthropic", max_tool_rounds=2)
+        generator = AIGenerator(
+            api_key="test-key", model="claude-sonnet-4", provider="anthropic", max_tool_rounds=2
+        )
         generator.client = mock_client
 
         response = generator.generate_response(
             query="What does lesson 3 of MCP course cover?",
             conversation_history=None,
             tools=[{"name": "get_course_outline"}, {"name": "search_course_content"}],
-            tool_manager=mock_tool_manager
+            tool_manager=mock_tool_manager,
         )
 
         # Should call API 3 times (tool1 + tool2 + final)
@@ -413,17 +413,19 @@ class TestSequentialToolCalling:
         mock_client.messages.create.side_effect = [
             tool_use_response,  # Round 1
             tool_use_response,  # Round 2
-            final_response       # Final call without tools
+            final_response,  # Final call without tools
         ]
 
-        generator = AIGenerator(api_key="test-key", model="claude-sonnet-4", provider="anthropic", max_tool_rounds=2)
+        generator = AIGenerator(
+            api_key="test-key", model="claude-sonnet-4", provider="anthropic", max_tool_rounds=2
+        )
         generator.client = mock_client
 
         response = generator.generate_response(
             query="Test query",
             conversation_history=None,
             tools=[{"name": "search_course_content"}],
-            tool_manager=mock_tool_manager
+            tool_manager=mock_tool_manager,
         )
 
         # Should call API exactly 3 times (2 tool rounds + 1 final)
@@ -474,21 +476,25 @@ class TestSequentialToolCalling:
             model="anthropic/claude-3.5-sonnet",
             provider="openrouter",
             base_url="https://openrouter.ai/api/v1",
-            max_tool_rounds=2
+            max_tool_rounds=2,
         )
         generator.client = mock_client
 
         # Complete tool definitions with required fields
         tools = [
             {"name": "get_course_outline", "description": "Get course outline", "input_schema": {}},
-            {"name": "search_course_content", "description": "Search course content", "input_schema": {}}
+            {
+                "name": "search_course_content",
+                "description": "Search course content",
+                "input_schema": {},
+            },
         ]
 
         response = generator.generate_response(
             query="What does lesson 3 of MCP course cover?",
             conversation_history=None,
             tools=tools,
-            tool_manager=mock_tool_manager
+            tool_manager=mock_tool_manager,
         )
 
         # Should call API 3 times
@@ -522,25 +528,27 @@ class TestSequentialToolCalling:
         mock_client.chat.completions.create.side_effect = [
             response_with_tools,  # Round 1
             response_with_tools,  # Round 2
-            final_response        # Final call
+            final_response,  # Final call
         ]
 
         generator = AIGenerator(
             api_key="test-key",
             model="anthropic/claude-3.5-sonnet",
             provider="openrouter",
-            max_tool_rounds=2
+            max_tool_rounds=2,
         )
         generator.client = mock_client
 
         # Complete tool definition with required fields
-        tools = [{"name": "search_course_content", "description": "Search content", "input_schema": {}}]
+        tools = [
+            {"name": "search_course_content", "description": "Search content", "input_schema": {}}
+        ]
 
         response = generator.generate_response(
             query="Test query",
             conversation_history=None,
             tools=tools,
-            tool_manager=mock_tool_manager
+            tool_manager=mock_tool_manager,
         )
 
         # Should call API exactly 3 times
@@ -581,14 +589,16 @@ class TestSequentialToolCalling:
 
         mock_client.messages.create.side_effect = [tool_use_1, tool_use_2, final_response]
 
-        generator = AIGenerator(api_key="test-key", model="claude-sonnet-4", provider="anthropic", max_tool_rounds=2)
+        generator = AIGenerator(
+            api_key="test-key", model="claude-sonnet-4", provider="anthropic", max_tool_rounds=2
+        )
         generator.client = mock_client
 
         response = generator.generate_response(
             query="What does lesson 3 cover?",
             conversation_history=None,
             tools=[{"name": "get_course_outline"}, {"name": "search_course_content"}],
-            tool_manager=mock_tool_manager
+            tool_manager=mock_tool_manager,
         )
 
         # Verify sequential tool calling occurred correctly
@@ -602,6 +612,6 @@ class TestSequentialToolCalling:
         assert response == "Final answer"
 
         # Verify that system prompt was included in all calls
-        for call in mock_client.messages.create.call_args_list:
-            call_kwargs = call[1]
-            assert 'system' in call_kwargs, "System prompt should be in all API calls"
+        for api_call in mock_client.messages.create.call_args_list:
+            call_kwargs = api_call[1]
+            assert "system" in call_kwargs, "System prompt should be in all API calls"
