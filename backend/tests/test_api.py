@@ -7,10 +7,11 @@ Tests the HTTP API layer including:
 - Request/response validation
 - Error handling
 """
-import pytest
-from unittest.mock import Mock
-from fastapi import HTTPException
 
+from unittest.mock import Mock
+
+import pytest
+from fastapi import HTTPException
 from models import Source
 
 
@@ -23,7 +24,7 @@ class TestQueryEndpoint:
         # Arrange
         request_data = {
             "query": "What is test-driven development?",
-            "session_id": "existing-session-456"
+            "session_id": "existing-session-456",
         }
 
         # Act
@@ -50,16 +51,13 @@ class TestQueryEndpoint:
 
         # Verify RAG system was called correctly
         mock_rag_system.query.assert_called_once_with(
-            "What is test-driven development?",
-            "existing-session-456"
+            "What is test-driven development?", "existing-session-456"
         )
 
     def test_query_without_session_id(self, client, mock_rag_system):
         """Test query without session_id creates new session"""
         # Arrange
-        request_data = {
-            "query": "How do I write unit tests?"
-        }
+        request_data = {"query": "How do I write unit tests?"}
 
         # Act
         response = client.post("/api/query", json=request_data)
@@ -74,17 +72,13 @@ class TestQueryEndpoint:
 
         # Verify query was called with new session
         mock_rag_system.query.assert_called_once_with(
-            "How do I write unit tests?",
-            "test-session-123"
+            "How do I write unit tests?", "test-session-123"
         )
 
     def test_query_with_empty_string(self, client, mock_rag_system):
         """Test query with empty query string"""
         # Arrange
-        request_data = {
-            "query": "",
-            "session_id": "test-session"
-        }
+        request_data = {"query": "", "session_id": "test-session"}
 
         # Act
         response = client.post("/api/query", json=request_data)
@@ -98,9 +92,7 @@ class TestQueryEndpoint:
     def test_query_missing_required_field(self, client):
         """Test query without required 'query' field"""
         # Arrange
-        request_data = {
-            "session_id": "test-session"
-        }
+        request_data = {"session_id": "test-session"}
 
         # Act
         response = client.post("/api/query", json=request_data)
@@ -112,9 +104,7 @@ class TestQueryEndpoint:
         """Test query with invalid JSON"""
         # Act
         response = client.post(
-            "/api/query",
-            data="invalid json{",
-            headers={"Content-Type": "application/json"}
+            "/api/query", data="invalid json{", headers={"Content-Type": "application/json"}
         )
 
         # Assert
@@ -124,10 +114,7 @@ class TestQueryEndpoint:
         """Test error handling when RAG system fails"""
         # Arrange
         mock_rag_system.query.side_effect = Exception("Vector store connection failed")
-        request_data = {
-            "query": "What is testing?",
-            "session_id": "test-session"
-        }
+        request_data = {"query": "What is testing?", "session_id": "test-session"}
 
         # Act
         response = client.post("/api/query", json=request_data)
@@ -142,10 +129,7 @@ class TestQueryEndpoint:
         """Test query that returns no sources"""
         # Arrange
         mock_rag_system.query.return_value = ("No relevant information found", [])
-        request_data = {
-            "query": "Nonexistent topic",
-            "session_id": "test-session"
-        }
+        request_data = {"query": "Nonexistent topic", "session_id": "test-session"}
 
         # Act
         response = client.post("/api/query", json=request_data)
@@ -159,10 +143,7 @@ class TestQueryEndpoint:
     def test_query_response_schema(self, client):
         """Test that response matches expected schema"""
         # Arrange
-        request_data = {
-            "query": "Test query",
-            "session_id": "test-session"
-        }
+        request_data = {"query": "Test query", "session_id": "test-session"}
 
         # Act
         response = client.post("/api/query", json=request_data)
@@ -220,7 +201,7 @@ class TestCoursesEndpoint:
         # Arrange
         mock_rag_system.get_course_analytics.return_value = {
             "total_courses": 0,
-            "course_titles": []
+            "course_titles": [],
         }
 
         # Act
@@ -273,7 +254,7 @@ class TestCoursesEndpoint:
         course_titles = [f"Course {i}" for i in range(100)]
         mock_rag_system.get_course_analytics.return_value = {
             "total_courses": 100,
-            "course_titles": course_titles
+            "course_titles": course_titles,
         }
 
         # Act
@@ -316,17 +297,14 @@ class TestAPIIntegration:
     def test_multi_turn_conversation(self, client, mock_rag_system):
         """Test multiple queries in same session"""
         # First query
-        response1 = client.post("/api/query", json={
-            "query": "What is testing?"
-        })
+        response1 = client.post("/api/query", json={"query": "What is testing?"})
         assert response1.status_code == 200
         session_id = response1.json()["session_id"]
 
         # Second query in same session
-        response2 = client.post("/api/query", json={
-            "query": "Tell me more about unit tests",
-            "session_id": session_id
-        })
+        response2 = client.post(
+            "/api/query", json={"query": "Tell me more about unit tests", "session_id": session_id}
+        )
         assert response2.status_code == 200
         assert response2.json()["session_id"] == session_id
 
@@ -338,9 +316,7 @@ class TestAPIIntegration:
         # Create multiple sessions
         sessions = []
         for i in range(3):
-            response = client.post("/api/query", json={
-                "query": f"Query {i}"
-            })
+            response = client.post("/api/query", json={"query": f"Query {i}"})
             assert response.status_code == 200
             sessions.append(response.json()["session_id"])
 
@@ -351,9 +327,7 @@ class TestAPIIntegration:
     def test_query_then_get_courses(self, client, mock_rag_system):
         """Test querying then getting course stats"""
         # First, submit a query
-        query_response = client.post("/api/query", json={
-            "query": "What courses are available?"
-        })
+        query_response = client.post("/api/query", json={"query": "What courses are available?"})
         assert query_response.status_code == 200
 
         # Then get course statistics

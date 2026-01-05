@@ -145,15 +145,19 @@ def mock_rag_system(mock_session_manager):
     rag.query.return_value = (
         "Test answer from RAG system",
         [
-            Source(text="Test Course - Lesson 1", link="https://example.com/lesson/1", type="lesson"),
-            Source(text="Test Course - Lesson 2", link="https://example.com/lesson/2", type="lesson")
-        ]
+            Source(
+                text="Test Course - Lesson 1", link="https://example.com/lesson/1", type="lesson"
+            ),
+            Source(
+                text="Test Course - Lesson 2", link="https://example.com/lesson/2", type="lesson"
+            ),
+        ],
     )
 
     # Mock get_course_analytics method
     rag.get_course_analytics.return_value = {
         "total_courses": 2,
-        "course_titles": ["Introduction to Testing", "Advanced Testing Techniques"]
+        "course_titles": ["Introduction to Testing", "Advanced Testing Techniques"],
     }
 
     # Mock add_course_folder method
@@ -165,13 +169,14 @@ def mock_rag_system(mock_session_manager):
 @pytest.fixture
 def test_app(mock_rag_system):
     """Create test FastAPI app without static file mounting"""
+    from typing import List, Optional
+
     from fastapi import FastAPI, HTTPException
     from fastapi.middleware.cors import CORSMiddleware
-    from pydantic import BaseModel
-    from typing import List, Optional
 
     # Import models
     from models import Source
+    from pydantic import BaseModel
 
     # Create test app
     app = FastAPI(title="Course Materials RAG System - Test", root_path="")
@@ -210,11 +215,7 @@ def test_app(mock_rag_system):
 
             answer, sources = mock_rag_system.query(request.query, session_id)
 
-            return QueryResponse(
-                answer=answer,
-                sources=sources,
-                session_id=session_id
-            )
+            return QueryResponse(answer=answer, sources=sources, session_id=session_id)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -224,8 +225,7 @@ def test_app(mock_rag_system):
         try:
             analytics = mock_rag_system.get_course_analytics()
             return CourseStats(
-                total_courses=analytics["total_courses"],
-                course_titles=analytics["course_titles"]
+                total_courses=analytics["total_courses"], course_titles=analytics["course_titles"]
             )
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
@@ -242,10 +242,7 @@ def client(test_app):
 @pytest.fixture
 def sample_query_request():
     """Sample query request data"""
-    return {
-        "query": "What is test-driven development?",
-        "session_id": None
-    }
+    return {"query": "What is test-driven development?", "session_id": None}
 
 
 @pytest.fixture
@@ -253,5 +250,5 @@ def sample_sources():
     """Sample source list for testing"""
     return [
         Source(text="Test Course - Lesson 1", link="https://example.com/lesson/1", type="lesson"),
-        Source(text="Test Course - Lesson 2", link="https://example.com/lesson/2", type="lesson")
+        Source(text="Test Course - Lesson 2", link="https://example.com/lesson/2", type="lesson"),
     ]
