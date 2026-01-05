@@ -4,8 +4,7 @@ Pytest configuration and fixtures for RAG system tests
 
 import sys
 from pathlib import Path
-from typing import List
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 
 import pytest
 

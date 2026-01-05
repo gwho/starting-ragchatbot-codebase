@@ -8,11 +8,7 @@ Tests the HTTP API layer including:
 - Error handling
 """
 
-from unittest.mock import Mock
-
 import pytest
-from fastapi import HTTPException
-from models import Source
 
 
 @pytest.mark.api
