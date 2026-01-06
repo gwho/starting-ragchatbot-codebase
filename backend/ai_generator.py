@@ -70,7 +70,7 @@ Provide only the direct answer to what was asked.
         self.base_params = {
             "model": self.model,
             "temperature": 0,
-            "max_tokens": 300,  # Reduced to fit within OpenRouter credit limits
+            "max_tokens": 300,  # Llama free model has higher limits
         }
 
     def generate_response(
