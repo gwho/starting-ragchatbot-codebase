@@ -80,11 +80,20 @@ jobs:
       - name: Run Claude Code task
         id: claude-task
         run: |
+          # Set API provider based on available secrets
+          if [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            export API_PROVIDER=anthropic
+            export ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}"
+          elif [ -n "${{ secrets.OPENROUTER_API_KEY }}" ]; then
+            export API_PROVIDER=openrouter
+            export ANTHROPIC_API_KEY="${{ secrets.OPENROUTER_API_KEY }}"
+            export OPENROUTER_MODEL="anthropic/claude-3.5-sonnet"
+          fi
+
           # This is a placeholder - you would integrate with Claude Code CLI here
           echo "Task: ${{ steps.extract-task.outputs.task }}"
+          echo "Using API Provider: ${API_PROVIDER:-none}"
           echo "Note: Full Claude Code integration requires additional setup"
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Commit and push changes
         if: success()

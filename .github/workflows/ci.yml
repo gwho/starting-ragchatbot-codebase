@@ -51,9 +51,17 @@ jobs:
 
     - name: Run pytest (tests with coverage)
       run: |
+        # Set API provider based on available secrets
+        if [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+          export API_PROVIDER=anthropic
+          export ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}"
+        elif [ -n "${{ secrets.OPENROUTER_API_KEY }}" ]; then
+          export API_PROVIDER=openrouter
+          export ANTHROPIC_API_KEY="${{ secrets.OPENROUTER_API_KEY }}"
+          export OPENROUTER_MODEL="anthropic/claude-3.5-sonnet"
+        fi
+
         uv run pytest backend/tests/ -v --cov=backend --cov-report=term-missing --cov-report=xml
-      env:
-        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4
