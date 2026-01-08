@@ -137,27 +137,6 @@ body {
     padding: 0;
 }
 
-/* Header - Hidden */
-header {
-    display: none;
-}
-
-header h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0;
-}
-
-.subtitle {
-    font-size: 0.95rem;
-    color: var(--text-secondary);
-    margin-top: 0.5rem;
-}
-
 /* Main Content Area with Sidebar */
 .main-content {
     flex: 1;
@@ -866,15 +845,7 @@ details[open] .suggested-header::before {
     .chat-main {
         order: 1;
     }
-    
-    header {
-        padding: 1rem;
-    }
-    
-    header h1 {
-        font-size: 1.5rem;
-    }
-    
+
     .chat-messages {
         padding: 1rem;
     }
